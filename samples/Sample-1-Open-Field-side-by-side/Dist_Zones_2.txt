@@ -1,0 +1,26 @@
+ZONE 1 STATS
+
+Zone Size	1170
+Inside Frames	2323
+Inside Time	77.8048
+Inside Rate	0.138596
+Outside Frames	14438
+Outside Time	483.575
+Outside Rate	0.861404
+
+
+ZONE 1 USE
+
+Distance to the Zone Edges
+
+Use/Dst. Edge	Inside	50mm	100mm	150mm	
+Frame Count	2323	6526	7382	530	
+Time Count	77.8048	218.577	247.247	17.7514	
+Frequency	0.138596	0.389356	0.440427	0.031621	
+
+Distance to the Zone Center
+
+Use/Dst. Edge	Inside	50mm	100mm	150mm	200mm	250mm	300mm	350mm	
+Frame Count	38	833	881	2279	5912	6171	647	
+Time Count	1.27274	27.8999	29.5075	76.3311	198.012	206.687	21.6701	
+Frequency	0.00226717	0.0496987	0.0525625	0.13597	0.352724	0.368176	0.0386015	

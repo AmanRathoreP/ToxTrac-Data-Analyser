@@ -1,0 +1,3 @@
+Time (sec)	Arena	Track	Avg. Pos. X (mm)	Avg. Pos. Y (mm)	Time Lenght (sec)
+162.342	1	1	518.296	358.372	16.1102
+397.23	1	1	544.109	388.725	4.35413

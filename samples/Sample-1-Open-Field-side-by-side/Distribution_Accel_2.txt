@@ -1,0 +1,2 @@
+mm/s^2	Count	Rate
+0.5	0	-nan(ind)
