@@ -155,7 +155,14 @@ def analyze(
             "--plots/--no-plots",
             help="Generate trajectory plots for each session"
         )
-    ] = False
+    ] = False,
+    save_zones: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--save-zones",
+            help="Save the generated zones to a JSON file for reuse in other projects"
+        )
+    ] = None
 ):
     """
     🔬 Analyze ToxTrac tracking data for time spent in zones and movement patterns.
@@ -170,6 +177,12 @@ def analyze(
         
         # Analyze with custom output location and JSON format
         python main.py analyze data/ -o results/ -f json csv
+        
+        # Save generated zones for reuse in other projects
+        python main.py analyze data/ --zones oft-individual --save-zones zones/my_zones.json
+        
+        # Load previously saved zones for analysis
+        python main.py analyze data/ --zones custom --custom-zones-file zones/my_zones.json
         
         # Debug mode with detailed logging
         python main.py analyze data/ --log-level DEBUG --log-file debug.log
@@ -229,6 +242,12 @@ def analyze(
             raise typer.Exit(1)
         
         print_success(f"Created {len(zones)} zones: {[z.name for z in zones]}")
+        
+        # Save zones if requested
+        if save_zones:
+            print_info(f"Saving zones to {save_zones}...")
+            _save_zones_to_file(zones, save_zones)
+            print_success(f"Zones saved to {save_zones}")
         
         # Perform analysis
         print_info("Analyzing sessions...")
@@ -595,6 +614,39 @@ def _load_custom_zones(zones_file: Path) -> List[BoundingBox]:
         zones.append(zone)
     
     return zones
+
+
+def _save_zones_to_file(zones: List[BoundingBox], output_file: Path) -> None:
+    """
+    Save zones to a JSON file.
+    
+    Args:
+        zones: List of BoundingBox zones to save
+        output_file: Path to save the zones file
+    """
+    import json
+    
+    zones_data = []
+    for zone in zones:
+        zones_data.append({
+            'name': zone.name,
+            'x_min': zone.x_min,
+            'y_min': zone.y_min,
+            'x_max': zone.x_max,
+            'y_max': zone.y_max,
+            'description': zone.description
+        })
+    
+    # Ensure output directory exists
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_file, 'w') as f:
+        json.dump(zones_data, f, indent=2)
+    
+    # Print zone summary
+    print_info("Zone Summary:")
+    for zone in zones:
+        print_info(f"  {zone.name}: ({zone.x_min:.1f}, {zone.y_min:.1f}) to ({zone.x_max:.1f}, {zone.y_max:.1f})")
 
 
 @app.command()
