@@ -236,6 +236,8 @@ python main.py create-zones-gui zones.json [OPTIONS]
 
 **Options:**
 - `--tracking-file, -t`: Background tracking data file
+- `--background-image, -b`: Background image file for reference (JPG, PNG, etc.)
+- `--image-coords`: Image coordinate bounds (required with --background-image)
 - `--x-range`: X coordinate range for empty plot
 - `--y-range`: Y coordinate range for empty plot
 
@@ -473,8 +475,11 @@ python main.py analyze "samples/Experiment_1" "samples/Experiment_2" "samples/Ex
 
 ### **Custom Zone Creation Workflow**
 ```bash
-# Step 1: Create zones interactively
+# Step 1: Create zones interactively with tracking data
 python main.py create-zones-gui experiment_zones.json -t "samples/Sample-1-Open-Field-side-by-side/Tracking_RealSpace_1.txt"
+
+# OR: Create zones with background image reference
+python main.py create-zones-gui experiment_zones.json -b arena_photo.jpg --image-coords="-150,-100,150,100"
 
 # Step 2: Visualize created zones
 python main.py visualize-zones experiment_zones.json -t "samples/Sample-1-Open-Field-side-by-side/Tracking_RealSpace_1.txt" --save-image zone_preview.png
@@ -526,10 +531,13 @@ python main.py analyze "samples/Sample-1-Open-Field-side-by-side" --zones oft-in
 
 **Output:** Session-specific zone analysis with 0.55 inner zone ratio (generates the example `toxtrac_analysis_20250715_100805` directory)
 
-### **Example 4: Custom Zone Research**
+### **Example 4: Custom Zone Research with Background Image**
 ```bash
-# Create custom zones for novel apparatus
-python main.py create-zones-gui novel_apparatus.json --x-range="-150,150" --y-range="-100,100"
+# Create custom zones using arena photo as reference
+python main.py create-zones-gui novel_apparatus.json -b arena_setup.jpg --image-coords="-150,-100,150,100"
+
+# Alternative: Create with tracking data background
+python main.py create-zones-gui novel_apparatus.json -t "samples/tracking_data.txt"
 
 # Apply to experimental data
 python main.py analyze "samples/Novel_Apparatus" --zones custom --custom-zones-file novel_apparatus.json --plots --individual

@@ -39,6 +39,8 @@ class ZoneCreatorGUI:
         self.fig = None
         self.ax = None
         self.tracking_data = None
+        self.background_image = None
+        self.image_bounds = None
         
         # GUI state
         self.creating_zone = False
@@ -122,6 +124,49 @@ class ZoneCreatorGUI:
         except Exception as e:
             self.logger.error(f"Failed to create GUI: {e}")
             print_error(f"Failed to create GUI: {e}")
+
+    def create_zones_with_background_image(
+        self,
+        image_file: Path,
+        image_bounds: Tuple[float, float, float, float],
+        output_file: Path
+    ) -> None:
+        """
+        Create zones interactively using a background image for reference.
+        
+        Args:
+            image_file: Path to background image file
+            image_bounds: Image coordinate bounds as (x_min, y_min, x_max, y_max)
+            output_file: Path to save zone definitions
+        """
+        print_info(f"Loading background image for zone creation: {image_file}")
+        
+        try:
+            # Load and store image data
+            import matplotlib.image as mpimg
+            self.background_image = mpimg.imread(image_file)
+            self.image_bounds = image_bounds
+            
+            # Create the GUI
+            self._setup_gui_with_image(image_file, image_bounds)
+            self._setup_controls()
+            
+            print_info("GUI opened! Use the interface to create zones:")
+            print_info("1. Enter zone name in the text box")
+            print_info("2. Click 'Start Zone' button")
+            print_info("3. Click two points to define rectangle (top-left, bottom-right)")
+            print_info("4. Repeat for more zones")
+            print_info("5. Click 'Save Zones' when done")
+            
+            plt.show()
+            
+            # Save zones after GUI closes
+            if self.zones:
+                self._save_zones(output_file)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create GUI with image: {e}")
+            print_error(f"Failed to create GUI with image: {e}")
     
     def _setup_gui_with_data(self, session: TrackingSession) -> None:
         """Setup GUI with tracking data as background."""
@@ -160,6 +205,32 @@ class ZoneCreatorGUI:
         self.ax.set_xlabel('X Coordinate (mm)')
         self.ax.set_ylabel('Y Coordinate (mm)')
         self.ax.set_title('Zone Creator - Empty Coordinate System')
+        self.ax.grid(True, alpha=0.3)
+        
+        # Set equal aspect ratio
+        self.ax.set_aspect('equal')
+        
+        # Connect click event
+        self.fig.canvas.mpl_connect('button_press_event', self._on_click)
+
+    def _setup_gui_with_image(self, image_file: Path, image_bounds: Tuple[float, float, float, float]) -> None:
+        """Setup GUI with background image."""
+        # Create figure with subplots for controls
+        self.fig = plt.figure(figsize=(12, 8))
+        
+        # Main plot area
+        self.ax = plt.subplot2grid((6, 4), (0, 0), colspan=4, rowspan=4)
+        
+        # Display background image
+        x_min, y_min, x_max, y_max = image_bounds
+        self.ax.imshow(self.background_image, extent=[x_min, x_max, y_min, y_max], 
+                      aspect='auto', alpha=0.7, origin='lower')
+        
+        self.ax.set_xlim(x_min, x_max)
+        self.ax.set_ylim(y_min, y_max)
+        self.ax.set_xlabel('X Coordinate (mm)')
+        self.ax.set_ylabel('Y Coordinate (mm)')
+        self.ax.set_title(f'Zone Creator - Background Image: {image_file.name}')
         self.ax.grid(True, alpha=0.3)
         
         # Set equal aspect ratio
@@ -403,3 +474,20 @@ def create_zones_gui_empty(
     """
     gui = ZoneCreatorGUI()
     gui.create_zones_gui_from_scratch(output_file, x_range, y_range)
+
+
+def create_zones_gui_with_image(
+    image_file: Path,
+    image_bounds: Tuple[float, float, float, float],
+    output_file: Path
+) -> None:
+    """
+    Convenience function to create zones GUI with background image.
+    
+    Args:
+        image_file: Path to background image file
+        image_bounds: Image coordinate bounds as (x_min, y_min, x_max, y_max)
+        output_file: Path to save zone definitions
+    """
+    gui = ZoneCreatorGUI()
+    gui.create_zones_with_background_image(image_file, image_bounds, output_file)

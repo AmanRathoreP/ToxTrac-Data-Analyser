@@ -31,7 +31,7 @@ from src.data_loader import ToxTracDataLoader
 from src.analyzer import ToxTracAnalyzer  
 from src.output import ResultsExporter
 from src.models import BoundingBox
-from src.zone_gui import create_zones_gui_from_data, create_zones_gui_empty
+from src.zone_gui import create_zones_gui_from_data, create_zones_gui_empty, create_zones_gui_with_image
 
 
 class ZoneType(str, Enum):
@@ -748,6 +748,20 @@ def create_zones_gui(
             help="Tracking file to use as background (optional)"
         )
     ] = None,
+    background_image: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--background-image", "-b",
+            help="Background image file for reference (JPG, PNG, etc.)"
+        )
+    ] = None,
+    image_coords: Annotated[
+        Optional[str],
+        typer.Option(
+            "--image-coords",
+            help="Image coordinate bounds as 'x_min,y_min,x_max,y_max' (required with --background-image)"
+        )
+    ] = None,
     x_range: Annotated[
         str,
         typer.Option(
@@ -767,17 +781,21 @@ def create_zones_gui(
     🎯 Open interactive GUI to create zones by clicking on plots.
     
     This command opens a matplotlib-based GUI where you can visually define
-    zones by clicking on tracking data plots or empty coordinate systems.
+    zones by clicking on tracking data plots, background images, or empty coordinate systems.
     
     Features:
     - Click to define rectangular zones
     - Use existing tracking data as background
+    - Load reference images (arena photos, etc.)
     - Name zones interactively
     - Save to JSON format for use with --zones=custom
     
     Examples:
         # Create zones with tracking data background
         python main.py create-zones-gui zones.json -t data/Tracking_RealSpace.txt
+        
+        # Create zones with background image reference
+        python main.py create-zones-gui zones.json -b arena_photo.jpg --image-coords="-150,-100,150,100"
         
         # Create zones on empty coordinate system
         python main.py create-zones-gui zones.json --x-range=-100,100 --y-range=-100,100
@@ -788,6 +806,16 @@ def create_zones_gui(
     print_header("Zone Creator GUI")
     
     try:
+        # Validate inputs
+        if background_image and not image_coords:
+            print_error("--image-coords is required when using --background-image")
+            print_info("Format: --image-coords='x_min,y_min,x_max,y_max'")
+            raise typer.Exit(1)
+        
+        if background_image and tracking_file:
+            print_error("Cannot use both --background-image and --tracking-file simultaneously")
+            raise typer.Exit(1)
+        
         # Parse coordinate ranges
         try:
             x_min, x_max = map(float, x_range.split(','))
@@ -804,6 +832,22 @@ def create_zones_gui(
             
             print_info(f"Opening GUI with tracking data: {tracking_file}")
             create_zones_gui_from_data(tracking_file, output_file)
+            
+        elif background_image:
+            # GUI with background image
+            if not background_image.exists():
+                print_error(f"Background image not found: {background_image}")
+                raise typer.Exit(1)
+            
+            try:
+                img_x_min, img_y_min, img_x_max, img_y_max = map(float, image_coords.split(','))
+            except ValueError:
+                print_error("Invalid image-coords format. Use 'x_min,y_min,x_max,y_max'")
+                raise typer.Exit(1)
+            
+            print_info(f"Opening GUI with background image: {background_image}")
+            print_info(f"Image coordinates: ({img_x_min}, {img_y_min}) to ({img_x_max}, {img_y_max})")
+            create_zones_gui_with_image(background_image, (img_x_min, img_y_min, img_x_max, img_y_max), output_file)
             
         else:
             # GUI with empty coordinate system
